@@ -1,17 +1,13 @@
 ﻿using Bunq.Sdk.Context;
+using BunqPaymentsForMoneyBird.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.IO;
-using BunqPaymentsForMoneyBird.Models;
 
 namespace BunqPaymentsForMoneyBird
 {
     public class Program
     {
-        private readonly AppSettings _configuration;
-        private readonly MailHandler _invoices;
-        private readonly MailHandler _paymentLinks;
-
         public static void Main(string[] args)
         {
             IConfigurationBuilder builder = new ConfigurationBuilder()
