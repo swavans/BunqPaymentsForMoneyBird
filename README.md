@@ -15,5 +15,5 @@ This tool can be used to intercept mails from moneybird, call the bunq api and r
  
  # Usage
  - Start the program by opening a commandline interface and executing the following command "dotnet BunqPaymentsForMoneybird.dll"
- - Send your invoices normally with one exception instead of when you send them sending them to your contacts email, send them to the invoice email adress you have set up. DO NOT CHANGE YOUR CUSTOMERS EMAIL DIRECTLY since the mail adress specified here will be used by the program to send the final invoice
+ - Send your invoices normally with one exception instead of when you send them sending them to your contacts email, send them to the invoice email adress you have set up. DO NOT CHANGE YOUR CUSTOMERS CONTACT INFO but only the send to email after you pressed the send invoice button the first time since the mail adress specified here will be used by the program to send the final invoice
 
