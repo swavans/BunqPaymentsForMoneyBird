@@ -1,13 +1,14 @@
-﻿using Bunq.Sdk.Model.Generated.Endpoint;
-using Bunq.Sdk.Model.Generated.Object;
-using BunqPaymentsForMoneyBird.Models;
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 using System.Xml.Serialization;
+using Bunq.Sdk.Model.Generated.Endpoint;
+using Bunq.Sdk.Model.Generated.Object;
+using BunqPaymentsForMoneyBird.Models;
 using Invoice = BunqPaymentsForMoneyBird.Models.Invoice;
 
 namespace BunqPaymentsForMoneyBird
@@ -15,8 +16,8 @@ namespace BunqPaymentsForMoneyBird
     public class PaymentHandler
     {
         private readonly AppSettings _configuration;
-        private MailHandler _invoices;
         private readonly MailHandler _paymentLinks;
+        private readonly MailHandler _invoices;
 
         public PaymentHandler(AppSettings configuration)
         {
@@ -27,16 +28,15 @@ namespace BunqPaymentsForMoneyBird
 
             _paymentLinks = new MailHandler(_configuration.paymentMail.server, _configuration.paymentMail.mail,
                 _configuration.paymentMail.password, _configuration.paymentMail.port, _configuration.paymentMail.ssl);
-
         }
 
         public void HandlePayments()
         {
             try
             {
-                MailMessage message = _invoices.GetMessage().Result;
-                Invoice invoice = GetInvoice(message);
-                string token =
+                var message = _invoices.GetMessage().Result;
+                var invoice = GetInvoice(message);
+                var token =
                     GetPaymentToken(
                         invoice.LegalMonetaryTotal.PayableAmount.Value.ToString(CultureInfo.InvariantCulture),
                         invoice.ID.Value);
@@ -48,26 +48,19 @@ namespace BunqPaymentsForMoneyBird
                 Console.ReadKey();
                 Environment.Exit(0);
             }
-
         }
 
         private Invoice GetInvoice(MailMessage message)
         {
             try
             {
-                System.Net.Mail.Attachment xmlInvoice = message.Attachments.SingleOrDefault(x => x.Name.Contains(".xml"));
-                if (xmlInvoice == null)
-                {
-                    throw new NullReferenceException();
-                }
+                var xmlInvoice = message.Attachments.SingleOrDefault(x => x.Name.Contains(".xml"));
+                if (xmlInvoice == null) throw new NullReferenceException();
 
-                XmlSerializer serializer = new XmlSerializer(typeof(Invoice));
+                var serializer = new XmlSerializer(typeof(Invoice));
 
-                Invoice invoice = serializer.Deserialize(xmlInvoice.ContentStream) as Invoice;
-                if (invoice == null)
-                {
-                    throw new NullReferenceException();
-                }
+                var invoice = serializer.Deserialize(xmlInvoice.ContentStream) as Invoice;
+                if (invoice == null) throw new NullReferenceException();
 
                 return invoice;
             }
@@ -82,33 +75,35 @@ namespace BunqPaymentsForMoneyBird
         private string GetPaymentToken(string amount, string description)
         {
             RequestInquiry.Create(new Amount(amount, "EUR"),
-                counterpartyAlias: new Pointer("EMAIL", _configuration.paymentMail.mail), description: description, allowBunqme: true);
+                new Pointer("EMAIL", _configuration.paymentMail.mail), description, true);
 
-            MailMessage message = _paymentLinks.GetMessage().Result;
+            var message = _paymentLinks.GetMessage().Result;
 
 
             if (message.Body.Contains(amount))
             {
-                Stream messageText = message.AlternateViews[0].ContentStream;
-                string result = Encoding.UTF8.GetString((messageText as MemoryStream).ToArray());
+                var messageText = message.AlternateViews[0].ContentStream;
+                var result = Encoding.UTF8.GetString((messageText as MemoryStream).ToArray());
                 return result.Split("https://bunq.me/t/")[1].Split("\" target=\"")[0];
             }
+
             throw new NullReferenceException();
         }
 
         private MailMessage ModifyMail(MailMessage message, string token)
         {
             message.Body = message.Body.Replace(_configuration.bunq.fakeKey, token);
-            Stream messageText = message.AlternateViews[0].ContentStream;
-            string html = Encoding.UTF8.GetString((messageText as MemoryStream).ToArray());
+            var messageText = message.AlternateViews[0].ContentStream;
+            var html = Encoding.UTF8.GetString((messageText as MemoryStream).ToArray());
             html = html.Replace(_configuration.bunq.fakeKey, token);
-            message.AlternateViews[0] = AlternateView.CreateAlternateViewFromString(html, null, System.Net.Mime.MediaTypeNames.Text.Html); 
+            message.AlternateViews[0] =
+                AlternateView.CreateAlternateViewFromString(html, null, MediaTypeNames.Text.Html);
             return message;
         }
 
         private void SendMail(MailMessage mail, string targetAddress)
         {
-            using (SmtpClient client = new SmtpClient(_configuration.sendMail.server, _configuration.sendMail.port))
+            using (var client = new SmtpClient(_configuration.sendMail.server, _configuration.sendMail.port))
             {
                 mail.To.Clear();
                 mail.To.Add(targetAddress);

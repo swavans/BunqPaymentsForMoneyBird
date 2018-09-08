@@ -1,8 +1,8 @@
-﻿using Bunq.Sdk.Context;
+﻿using System;
+using System.IO;
+using Bunq.Sdk.Context;
 using BunqPaymentsForMoneyBird.Models;
 using Microsoft.Extensions.Configuration;
-using System;
-using System.IO;
 
 namespace BunqPaymentsForMoneyBird
 {
@@ -10,22 +10,19 @@ namespace BunqPaymentsForMoneyBird
     {
         public static void Main(string[] args)
         {
-            IConfigurationBuilder builder = new ConfigurationBuilder()
+            var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json");
 
-            AppSettings settings = new AppSettings();
+            var settings = new AppSettings();
 
             builder.Build().Bind(settings);
 
             InitializeBunq(settings);
 
-            PaymentHandler program = new PaymentHandler(settings);
+            var program = new PaymentHandler(settings);
 
-            while (true)
-            {
-                program.HandlePayments();
-            }
+            while (true) program.HandlePayments();
         }
 
         public static void InitializeBunq(AppSettings configuration)
@@ -34,13 +31,13 @@ namespace BunqPaymentsForMoneyBird
             {
                 try
                 {
-                    ApiContext apiContext = ApiContext.Restore("bunq.conf");
+                    var apiContext = ApiContext.Restore("bunq.conf");
                     BunqContext.LoadApiContext(apiContext);
                 }
                 catch (Exception)
                 {
                     File.Delete("bunq.conf");
-                    ApiContext apiContext = ApiContext.Create(ApiEnvironmentType.PRODUCTION,
+                    var apiContext = ApiContext.Create(ApiEnvironmentType.PRODUCTION,
                         configuration.bunq.apikey, configuration.bunq.description);
                     apiContext.Save();
                     BunqContext.LoadApiContext(apiContext);
@@ -48,12 +45,11 @@ namespace BunqPaymentsForMoneyBird
             }
             else
             {
-                ApiContext apiContext = ApiContext.Create(ApiEnvironmentType.PRODUCTION,
+                var apiContext = ApiContext.Create(ApiEnvironmentType.PRODUCTION,
                     configuration.bunq.apikey, configuration.bunq.description);
                 apiContext.Save();
                 BunqContext.LoadApiContext(apiContext);
             }
         }
-
     }
 }
