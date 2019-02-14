@@ -1,4 +1,4 @@
-# MoneyBidBunqLink
+# MoneyBirdBunqLink
 This tool can be used to intercept mails from moneybird, call the bunq api and retrieve a payment url and then send the mail to the original target.
 
 # Requirements
